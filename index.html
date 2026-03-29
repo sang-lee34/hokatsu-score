@@ -707,365 +707,1006 @@ footer {
   </div>
 </footer>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
-// ── 就労スコアテーブル（区ごとに定義）──
-// キー: 就労区分 → 1人分の基準指数
-// 就労区分キー体系（月日数×日時間）
-// d20h8=月20日以上かつ1日8h以上, d20h7=月20日以上かつ7h以上, ...
-// d16h8=月16〜19日かつ8h以上, d12h8=月12〜15日かつ8h以上
-// d48=月48時間以上（最低基準）, search=求職中, none=就労なし
-const WORK_SCORES = {
-  // ── 世田谷区（令和7年度 公式PDF検証済）──
-  // 公式は週単位。月日数に逆換算: 週5日+=月20日+, 週4日=月16〜19日, 週3日=月12〜15日
-  // 週40h+=月20日×8h+, 週37h=月20日×7.4h≒7h+, 週35h=月16日×8.75h≒月16日×8h+
-  // 週30h=月16日×7.5h≒月16日×6h+, 週25h=月12日×8.3h≒月12日×8h+
-  // 週20h=月12日×6.7h≒月12日×6h+, 週16h=月12日×5.3h≒月12日×5h+, 月48h=15
-  setagaya: {
-    d20h8:50, d20h7:45, d20h6:40, d20h5:35, d20h4:30,
-    d16h8:45, d16h7:40, d16h6:35, d16h5:30, d16h4:25,
-    d12h8:30, d12h7:25, d12h6:25, d12h5:20, d12h4:20,
-    d48:15, search:10, none:0
-  },
-
-  // ── 練馬区（令和7年度 公式PDF検証済）──
-  // 月20日+: 8h=40, 7h=37, 6h=34, 5h=31, 4h=28
-  // 月16〜19日: 8h=37, 7h=34, 6h=31, 5h=28, 4h=25
-  // 月12〜15日: 8h=34, 7h=31, 6h=28, 5h=25, 4h=22
-  nerima: {
-    d20h8:40, d20h7:37, d20h6:34, d20h5:31, d20h4:28,
-    d16h8:37, d16h7:34, d16h6:31, d16h5:28, d16h4:25,
-    d12h8:34, d12h7:31, d12h6:28, d12h5:25, d12h4:22,
-    d48:22, search:10, none:0
-  },
-
-  // ── 江戸川区（令和7年度 公式QA検証済）─���
-  // 公式例: 月20日+7h+→50点, 月16日+7h+→40点, ひとり親+10, 未就学3人以上+1
-  // 基準指数上限50, 世田谷と同スケール。8h/7hの詳細分岐は公式未確認のため近似
-  edogawa: {
-    d20h8:50, d20h7:50, d20h6:45, d20h5:40, d20h4:35,
-    d16h8:45, d16h7:40, d16h6:35, d16h5:30, d16h4:25,
-    d12h8:35, d12h7:30, d12h6:25, d12h5:20, d12h4:15,
-    d48:15, search:10, none:0
-  },
-
-  // ── 江東区（令和7年度 公式データ確認済）──
-  // フルタイム=月20日+週40h=12点（上限12）
-  // h8≒週40h, h7≒週35h, h6≒週30h, h5≒週25h, h4≒週20h
-  koto: {
-    d20h8:12, d20h7:11, d20h6:10, d20h5:9,  d20h4:8,
-    d16h8:11, d16h7:10, d16h6:9,  d16h5:8,  d16h4:7,
-    d12h8:9,  d12h7:8,  d12h6:7,  d12h5:6,  d12h4:5,
-    d48:4,  search:4, none:0
-  },
-
-  // ── 墨田区（令和7年度 公式PDF検証済）──
-  // 週単位（上限20）: 週5日40h=20, 37h=18, 35h=16 / 週4日30h=14, 24h=12 / 週3日18h=10, 12h=8
-  // UIは月日数→週単位近似: d20≒週5日, d16≒週4日, d12≒週3日
-  // h8≒40h, h7≒37h, h6≒35h, h5≒30h, h4≒24h
-  sumida: {
-    d20h8:20, d20h7:18, d20h6:16, d20h5:14, d20h4:12,
-    d16h8:16, d16h7:14, d16h6:12, d16h5:10, d16h4:8,
-    d12h8:10, d12h7:10, d12h6:10, d12h5:8,  d12h4:8,
-    d48:6,  search:6, none:0
-  },
-
-  // ── 港区（令和7年度 公式案内確認済・スケール20）──
-  // フルタイム=週5日+1日8時間(週40h)+→20点。上限20。
-  // 調整指数加算: 兄弟同時申込+1, 双子+1, 自危業+1
-  // 減算: 3ヶ月未満勤務実績-2, 自宅自営-3, 同居親族保育可能-3
-  // 待機児童ゼロ5年継続、入所はほぼ確実（加点より優先順位が重要）
-  minato: {
-    d20h8:20, d20h7:18, d20h6:16, d20h5:14, d20h4:12,
-    d16h8:18, d16h7:16, d16h6:14, d16h5:12, d16h4:10,
-    d12h8:14, d12h7:12, d12h6:10, d12h5:8,  d12h4:6,
-    d48:5,  search:3, none:0
-  },
-
-  // ── 中野区（令和7年度 公式QA・二次情報確認済）──
-  // フルタイム=月20日以上・1日7時間以上→20点（7h基準、スケール20）
-  // 3ヶ月以上勤務実績あり→調整指数+1（保護者単位）
-  // 認可外月極48h以上6ヶ月+=+2点, 3ヶ月+は+1点
-  // 育休延長申立書提出→大幅減点（-40点相当）
-  nakano: {
-    d20h8:20, d20h7:20, d20h6:16, d20h5:14, d20h4:12,
-    d16h8:18, d16h7:16, d16h6:14, d16h5:12, d16h4:10,
-    d12h8:14, d12h7:12, d12h6:10, d12h5:8,  d12h4:6,
-    d48:5,  search:3, none:0
-  },
-};
-
-// ── 調整指数マップ（区ごと）──
-// 各フラグ → その区での加算点
-const ADJ_MAP = {
-  // 世田谷区：令和7年度 公式PDF全項目検証済
-  setagaya: {
-    single:20,        // ひとり親 +20 (#2)
-    welfare:10,       // 生活保護 +10 (#1)
-    soloPost:3,       // 単身赴任 +3 (#3)
-    returnWork:5,     // 産休育休明け復帰予定 +5 (#4)
-    disHeavy:5,       // 保護者障害3級・著しく負担 +5 (#6)
-    disLight:1,       // 保護者障害1〜4級等 +1 (#7)
-    disChild:15,      // 申込児障害・就労制限 最大+15 (#9)
-    nursingHome:2,    // 世帯内重度障害者 +2 (#8)
-    twin:6,           // 多胎児で兄弟在園/同時申込 +6 (#11多胎)
-    sibSame:5,        // 兄弟姉妹在園・同時申込 +5 (#11)
-    unlic96h:6,       // 認可外96h以上 +6 (#12)
-    unlic48h:5,       // 認可外48〜96h +5 (#12)
-    unlicPaidRel:1,   // 別居親族有償48h以上 +1 (#13)
-    kindergarten:1,   // 幼稚園在園 +1 (#14)
-    specialTransfer:3,// 特別転園 +3 (#15)
-    gp_emergency:2,   // 祖父母緊急保育2ヶ月超 +2 (#16)
-    prevArrears:-20,  // 兄弟保育料3ヶ月滞納 -20 (#19)
-    outOfWard:-10,    // 区外在住・区内勤務 -10 (#20)
-    maternityNext:-5, // 申込児以外の産休中 -5 (#10)
-  },
-  // 練馬区：令和7年度 公式PDF全27項目検証済
-  nerima: {
-    single:8,         // ひとり親 +8 (#1)
-    welfare:2,        // 生活保護 +2 (#2)
-    soloPost:1,       // 単身赴任 +1 (#3)
-    outOfWardIn:-4,   // 区外在住・区内勤務 -4 (#4)
-    outOfWardOut:-6,  // 区外在住・区外勤務 -6 (#5)
-    urgentJob:3,      // 解雇・倒産後の緊急求職 +3 (#6)
-    multiChild3u:5,   // 未就学児3人以上 +5 (#7)
-    multiChild3e:2,   // 小3以下3人以上 +2 (#8)
-    gpHeavyDis:1,     // 同居親族重度障害/要介護3+ +1 (#9)
-    nurseryCarer:1,   // 保育士資格で区内就労 +1 (#10)
-    prevArrears:-20,  // 保育料滞納 -20 (#11)
-    disHeavy:1,       // 保護者重度障害（手帳所持） +1 (#12)
-    disWork:2,        // 保護者障害かつ就労・就学 +2 (#13)
-    disIll:-3,        // 保護者疾病(1)~(3)重症 -3 (#14)
-    unstableWork:-3,  // 就労継続1ヶ月未満 -3 (#15)
-    longDistTransfer:-4, // 2km以上の園への転園希望 -4 (#16)
-    unlicUsing:2,     // 認可外等利用中（一定時間） +2 (#17～19)
-    disChild:3,       // 申込児障害・配慮必要 +3 (#27)
-    gpInactiveYoung:-4, // 65歳未満祖父母・保育可能 -4 (#16相当)
-    sibSame:2,        // 同一園への在園兄弟 +2 (#25)
-    twin:3,           // 多胎児同時申込 +3~4 (#27)
-    returnWork1:2,    // 育休中・1歳児クラス申込 +2 (#25)
-    returnWork2:2,    // 育休中・2歳以上クラス申込 +2 (#26)
-  },
-  // ── 江戸川区（公式QA検証済）──
-  edogawa: {
-    single:20,        // ひとり親・父不存在+祖父母なし +10 → 実質ひとり親+10(+不存在50で計110)
-    welfare:10,       // 生活保護（推定）
-    disHeavy:5, disMid:3, disChild:0,
-    nursingHome:3, nursingVisit:2,
-    unlic6m:5, unlic3m:2,
-    soloPost:2, multiChild3u:1, twin:3, returnWork:3, disaster:2,
-    gpInactiveYoung:-2, gpInactiveOld:-1,
-    sibSame:3, sibOther:1,
-    extendLeave:0, arrears:0, prevArrears:-20,
-    outOfWardIn:-5,
-  },
-  // ── 江東区（令和7年度 公式データ確認済）──
-  // ひとり親+2（世帯加算）, 兄弟在園同一園+2, 双子+1, 保育士区内+1
-  // 認可外月16日+日4h月極+2（1人）, 育休再申込復帰+5, 兄弟保育料3ヶ月滞納-20
-  koto: {
-    single:2,
-    welfare:3,
-    disHeavy:3, disMid:2, disChild:2,
-    nursingHome:2, nursingVisit:1,
-    unlicUsing:2,
-    soloPost:0, multiChild:0,
-    twin:1,
-    returnWork:5,
-    nurseryCarer:1,
-    disaster:3,
-    gpInactiveYoung:-1, gpInactiveOld:0,
-    sibSame:2, sibOther:0,
-    extendLeave:0, arrears:0, prevArrears:-20,
-  },
-  // ── 墨田区（令和7年度 公式PDF検証済）──
-  // ひとり親（近隣保育者なし）=+7, 生活保護就労=+6, 生活保護自立=+4, 生活保護無収入=+2
-  // 申込児童障害+4, 双子+2, 認可外月極48h+2, 育休+2, 育休対象1歳初入所+3
-  // 保育料3ヶ月滞納-2, 勤務実績80%未満-2
-  sumida: {
-    single:7,         // ひとり親（近隣なし）+7
-    welfare:6,
-    disHeavy:5, disMid:3, disChild:4,
-    nursingHome:3, nursingVisit:2,
-    unlicUsing:2,
-    soloPost:1, multiChild:0, multiChild3u:0,
-    twin:2,
-    returnWork:2, returnWork1:3,
-    disaster:20,
-    gpInactiveYoung:-3, gpInactiveOld:0,
-    sibSame:3, sibOther:1,
-    extendLeave:0, arrears:-2, prevArrears:-2,
-    outOfWardIn:-1,
-  },
-  // ── 港区（公式案内確認済・フルタイム20点スケール）──
-  // 待機児童ゼロ5年継続。加算項目は非常に少ない（3項目のみ）
-  // 兄弟同時申込+1, 双子+1, 危険自営+1 / 3ヶ月未満実績-2, 自宅自営-3, 同居親族保育可-3
-  minato: {
-    single:0,         // 优先順位で対応（指数加算なし）
-    welfare:0,
-    disHeavy:0, disMid:0, disChild:0,
-    nursingHome:0, nursingVisit:0,
-    unlic6m:0, unlic3m:0,
-    soloPost:0, multiChild:0,
-    twin:1,           // 双子同時申込 +1
-    sibSame:1,        // 兄弟在園への申込 +1
-    returnWork:0, disaster:0,
-    gpInactiveYoung:-3, gpInactiveOld:0,  // 同居親族保育可 -3
-    extendLeave:0, arrears:0,
-  },
-  // ── 中野区（公式QA・二次情報確認済）──
-  // フルタイム=月20日+1日7h+=20点。3ヶ月勤務実績+1（保護者単位=両親で最大+2）
-  // 認可外月極48h: 6ヶ月+→+2, 3ヶ月+→+1。育休延長申立書で大幅減点(-40相当)
-  nakano: {
-    single:8,         // ひとり親（推定）
-    welfare:5,
-    disHeavy:4, disMid:2, disChild:0,
-    nursingHome:2, nursingVisit:1,
-    unlicUsing:2,     // 6ヶ月以上利用 +2（3ヶ月は+1）
-    soloPost:1,
-    multiChild:0, twin:1, returnWork:3, disaster:2,
-    gpInactiveYoung:-2, gpInactiveOld:0,
-    sibSame:2, sibOther:0,
-    extendLeave:-40, arrears:0, prevArrears:-3,
-    outOfWardIn:-3,
-  },
-};
-
-// ── 区メタ情報 ──
-const WARDS_META = {
-  setagaya: {
-    name:'世田谷区', tiebreaker:'課税所得が低い方を優先',
-    verified: true, verifiedNote:'令和7年度 公式PDF（p30〜32）全項目検証済',
-    // 結果データタイプ: distribution = 分布データあり
-    resultType: 'distribution',
-    // 令和7年4月 実際の入所児童 選考指数分布（公式統計CSV）
-    // 全区 4,415人のデータ
-    distribution: {
-      source: '令和7年4月入園児童の選考指数分布（世田谷区公式統計）',
-      total: 4415,
-      // 各バケツ: [指数範囲ラベル, 下限(inclusive), 上限(inclusive), 人数]
-      buckets: [
-        { label: '74以下', min: 0,   max: 74,  count: 137  },
-        { label: '75〜99', min: 75,  max: 99,  count: 216  },
-        { label: '100〜104', min: 100, max: 104, count: 342  },
-        { label: '105点',  min: 105, max: 105, count: 1799 },
-        { label: '106点',  min: 106, max: 106, count: 290  },
-        { label: '107以上', min: 107, max: 999, count: 1631 },
-      ]
+<script>
+// ═══════════════════════════════════════════════
+// 区データ（/data/*.json から自動生成）
+// 区を追加するにはこの配列にオブジェクトを追加するだけ
+// ═══════════════════════════════════════════════
+const WARDS = [
+  {
+    "id": "setagaya",
+    "name": "世田谷区",
+    "prefecture": "tokyo",
+    "version": "2025",
+    "verified": true,
+    "verifiedNote": "令和7年度 公式PDF（p30〜32）全項目検証済",
+    "tiebreaker": "課税所得が低い方を優先",
+    "specialNote": "105点の児童が全入園児の約41%を占め最多（令和7年4月）。育休復帰+5点が多数派。",
+    "workScores": {
+      "d20h8": 50,
+      "d20h7": 45,
+      "d20h6": 40,
+      "d20h5": 35,
+      "d20h4": 30,
+      "d16h8": 45,
+      "d16h7": 40,
+      "d16h6": 35,
+      "d16h5": 30,
+      "d16h4": 25,
+      "d12h8": 30,
+      "d12h7": 25,
+      "d12h6": 25,
+      "d12h5": 20,
+      "d12h4": 20,
+      "d48": 15,
+      "search": 10,
+      "none": 0
     },
-    specialNote:'105点の児童が全入園児の約41%を占め最多（令和7年4月）。育休復帰+5点が多数派。',
+    "adjMap": {
+      "single": 20,
+      "welfare": 10,
+      "soloPost": 3,
+      "returnWork": 5,
+      "disHeavy": 5,
+      "disLight": 1,
+      "disChild": 15,
+      "nursingHome": 2,
+      "twin": 6,
+      "sibSame": 5,
+      "sibOther": 0,
+      "unlic96h": 6,
+      "unlic48h": 5,
+      "prevArrears": -20,
+      "outOfWard": -10,
+      "gpInactiveYoung": 0,
+      "gpInactiveOld": 0
+    },
+    "resultType": "distribution",
+    "distribution": {
+      "source": "令和7年4月入園児童の選考指数分布（世田谷区公式統計）",
+      "total": 4415,
+      "buckets": [
+        {
+          "label": "74以下",
+          "min": 0,
+          "max": 74,
+          "count": 137
+        },
+        {
+          "label": "75〜99",
+          "min": 75,
+          "max": 99,
+          "count": 216
+        },
+        {
+          "label": "100〜104",
+          "min": 100,
+          "max": 104,
+          "count": 342
+        },
+        {
+          "label": "105点",
+          "min": 105,
+          "max": 105,
+          "count": 1799
+        },
+        {
+          "label": "106点",
+          "min": 106,
+          "max": 106,
+          "count": 290
+        },
+        {
+          "label": "107以上",
+          "min": 107,
+          "max": 999,
+          "count": 1631
+        }
+      ]
+    }
   },
-  nerima: {
-    name:'練馬区', tiebreaker:'課税所得が低い方を優先',
-    specialNote:'1歳クラスの最低指数は81点が最頻値（43%）。フルタイム共働き80点のみでは11%しか届かない。81点（+調整1点）で55%、82点（+2点）で78%通過。',
-    verified: true, verifiedNote:'令和7年度 公式実施基準表PDF全27項目検証済',
-    resultType: 'facilities',
-    facilities: {
-      source: '令和7年4月1次最低指数一覧 全4地区・認可保育園＋小規模保育事業（練馬区公式PDF）',
-      sourceUrl: 'https://www.city.nerima.tokyo.jp/kosodatekyoiku/kodomo/hoiku/hoikuen/nyuuen/moushikomi/siori-sisetu.html',
-      byAge: {
-        1: {
-          total: 209,
-          thresholds: [
-            { score: 50, count: 16 },
-            { score: 74, count: 6  },
-            { score: 77, count: 3  },
-            { score: 80, count: 2  },
-            { score: 81, count: 90 },
-            { score: 82, count: 50 },
-            { score: 83, count: 33 },
-            { score: 84, count: 11 },
-            { score: 85, count: 1  },
+  {
+    "id": "nerima",
+    "name": "練馬区",
+    "prefecture": "tokyo",
+    "version": "2025",
+    "verified": true,
+    "verifiedNote": "令和7年度 公式実施基準表PDF全27項目検証済",
+    "tiebreaker": "課税所得が低い方を優先",
+    "specialNote": "1歳クラスの最低指数は81点が最頻値（43%）。フルタイム共働き80点のみでは11%しか届かない。81点（+調整1点）で55%、82点（+2点）で78%通過。",
+    "workScores": {
+      "d20h8": 40,
+      "d20h7": 37,
+      "d20h6": 34,
+      "d20h5": 31,
+      "d20h4": 28,
+      "d16h8": 37,
+      "d16h7": 34,
+      "d16h6": 31,
+      "d16h5": 28,
+      "d16h4": 25,
+      "d12h8": 34,
+      "d12h7": 31,
+      "d12h6": 28,
+      "d12h5": 25,
+      "d12h4": 22,
+      "d48": 22,
+      "search": 10,
+      "none": 0
+    },
+    "adjMap": {
+      "single": 8,
+      "welfare": 2,
+      "soloPost": 1,
+      "outOfWardIn": -4,
+      "outOfWardOut": -6,
+      "urgentJob": 3,
+      "multiChild3u": 5,
+      "multiChild3e": 2,
+      "gpHeavyDis": 1,
+      "nurseryCarer": 1,
+      "prevArrears": -20,
+      "disHeavy": 1,
+      "disWork": 2,
+      "unlicUsing": 2,
+      "disChild": 3,
+      "gpInactiveYoung": -4,
+      "gpInactiveOld": 0,
+      "sibSame": 2,
+      "sibOther": 0,
+      "twin": 3,
+      "returnWork1": 2,
+      "returnWork2": 2
+    },
+    "resultType": "facilities",
+    "facilities": {
+      "source": "令和7年4月1次最低指数一覧 全4地区・認可保育園＋小規模保育事業（練馬区公式PDF）",
+      "sourceUrl": "https://www.city.nerima.tokyo.jp/kosodatekyoiku/kodomo/hoiku/hoikuen/nyuuen/moushikomi/siori-sisetu.html",
+      "byAge": {
+        "1": {
+          "total": 209,
+          "thresholds": [
+            {
+              "score": 50,
+              "count": 16
+            },
+            {
+              "score": 74,
+              "count": 6
+            },
+            {
+              "score": 77,
+              "count": 3
+            },
+            {
+              "score": 80,
+              "count": 2
+            },
+            {
+              "score": 81,
+              "count": 90
+            },
+            {
+              "score": 82,
+              "count": 50
+            },
+            {
+              "score": 83,
+              "count": 33
+            },
+            {
+              "score": 84,
+              "count": 11
+            },
+            {
+              "score": 85,
+              "count": 1
+            }
           ]
         }
       }
-    },
+    }
   },
-  edogawa: {
-    name:'江戸川区', tiebreaker:'課税所得が低い方を優先',
-    verified: true, verifiedNote:'令和7年度 公式QA（月20日+7h+=50点等）確認済。調整指数は推定含む',
-    specialNote:'区公式Q&Aによると「多くの保育園で最低指数100点。小規模・新規園は60〜100点未満でも入所可能なケースあり」。',
-    resultType: 'distribution',
-    distribution: {
-      source: '江戸川区公式Q&A（施設別データ非公表・区説明より推計）',
-      sourceUrl: 'https://www.city.edogawa.tokyo.jp/e048/qa/kosodate/kosodate/hoiku/moushikomi/riyochosei/sonota.html',
-      total: null,
-      buckets: [
-        { label: '60点未満',  min: 0,   max: 59,  count: 5  },
-        { label: '60〜99点',  min: 60,  max: 99,  count: 15 },
-        { label: '100点',     min: 100, max: 100, count: 55 },
-        { label: '101〜109点',min: 101, max: 109, count: 15 },
-        { label: '110点以上', min: 110, max: 999, count: 10 },
+  {
+    "id": "edogawa",
+    "name": "江戸川区",
+    "prefecture": "tokyo",
+    "version": "2025",
+    "verified": true,
+    "verifiedNote": "令和7年度 公式QA（月20日+7h+=50点等）確認済。調整指数は推定含む",
+    "tiebreaker": "課税所得が低い方を優先",
+    "specialNote": "区公式Q&Aによると「多くの保育園で最低指数100点。小規模・新規園は60〜100点未満でも入所可能なケースあり」。",
+    "workScores": {
+      "d20h8": 50,
+      "d20h7": 50,
+      "d20h6": 45,
+      "d20h5": 40,
+      "d20h4": 35,
+      "d16h8": 45,
+      "d16h7": 40,
+      "d16h6": 35,
+      "d16h5": 30,
+      "d16h4": 25,
+      "d12h8": 35,
+      "d12h7": 30,
+      "d12h6": 25,
+      "d12h5": 20,
+      "d12h4": 15,
+      "d48": 15,
+      "search": 10,
+      "none": 0
+    },
+    "adjMap": {
+      "single": 20,
+      "welfare": 10,
+      "disHeavy": 5,
+      "disMid": 3,
+      "disChild": 0,
+      "nursingHome": 3,
+      "nursingVisit": 2,
+      "unlic6m": 5,
+      "unlic3m": 2,
+      "soloPost": 2,
+      "multiChild3u": 1,
+      "twin": 3,
+      "returnWork": 3,
+      "disaster": 2,
+      "gpInactiveYoung": -2,
+      "gpInactiveOld": -1,
+      "sibSame": 3,
+      "sibOther": 1,
+      "prevArrears": -20,
+      "outOfWardIn": -5
+    },
+    "resultType": "distribution",
+    "distribution": {
+      "source": "江戸川区公式Q&A（施設別データ非公表・区説明より推計）",
+      "sourceUrl": "https://www.city.edogawa.tokyo.jp/e048/qa/kosodate/kosodate/hoiku/moushikomi/riyochosei/sonota.html",
+      "total": null,
+      "buckets": [
+        {
+          "label": "60点未満",
+          "min": 0,
+          "max": 59,
+          "count": 5
+        },
+        {
+          "label": "60〜99点",
+          "min": 60,
+          "max": 99,
+          "count": 15
+        },
+        {
+          "label": "100点",
+          "min": 100,
+          "max": 100,
+          "count": 55
+        },
+        {
+          "label": "101〜109点",
+          "min": 101,
+          "max": 109,
+          "count": 15
+        },
+        {
+          "label": "110点以上",
+          "min": 110,
+          "max": 999,
+          "count": 10
+        }
       ]
-    },
+    }
   },
-  koto: {
-    name:'江東区', tiebreaker:'兄弟姉妹の在園状況を優先',
-    verified: true, verifiedNote:'令和7年度 公式しおり・複数公式情報確認済。フルタイム共働き12+12=24点。',
-    specialNote:'スケール最小（上限12）。ボーダー中央値26点（令和7年4月実績）。24点では約33%の施設にしか届かない。',
-    resultType: 'facilities',
-    facilities: {
-      source: '令和7年度4月入園一次募集 保育園入所指数ボーダー表（江東区公式PDF）',
-      sourceUrl: 'https://www.city.koto.lg.jp/280308/kodomo/hoiku/ninka/101188.html',
-      // 全年齢集計: 43施設のボーダー分布
-      allAges: { total: 43, thresholds: [{score:22,count:1},{score:24,count:13},{score:26,count:22},{score:27,count:4},{score:28,count:3}] },
-      // 0歳は24点が最多, 2歳以上は26点中心
-      byAge: {
-        0: { total: 15, thresholds: [{score:24,count:8},{score:26,count:5},{score:28,count:2}] },
-        1: { total: 18, thresholds: [{score:22,count:1},{score:24,count:4},{score:26,count:10},{score:27,count:2},{score:28,count:1}] },
-        2: { total: 10, thresholds: [{score:24,count:1},{score:26,count:7},{score:27,count:2}] },
-      }
+  {
+    "id": "koto",
+    "name": "江東区",
+    "prefecture": "tokyo",
+    "version": "2025",
+    "verified": true,
+    "verifiedNote": "令和7年度 公式しおり・複数公式情報確認済。フルタイム共働き12+12=24点。",
+    "tiebreaker": "兄弟姉妹の在園状況を優先",
+    "specialNote": "スケール最小（上限12）。ボーダー中央値26点（令和7年4月実績）。24点では約33%の施設にしか届かない。",
+    "workScores": {
+      "d20h8": 12,
+      "d20h7": 11,
+      "d20h6": 10,
+      "d20h5": 9,
+      "d20h4": 8,
+      "d16h8": 11,
+      "d16h7": 10,
+      "d16h6": 9,
+      "d16h5": 8,
+      "d16h4": 7,
+      "d12h8": 9,
+      "d12h7": 8,
+      "d12h6": 7,
+      "d12h5": 6,
+      "d12h4": 5,
+      "d48": 4,
+      "search": 4,
+      "none": 0
     },
-  },
-  sumida: {
-    name:'墨田区', tiebreaker:'居住期間が長い方を優先',
-    verified: true, verifiedNote:'令和7年度 公式PDF（H26子ども・子育て会議資料）検証済。週単位定義・上限20。',
-    specialNote:'42点（フルタイム40点+調整指数2点）が1歳クラスの最頻ボーダー（施設の49%）。フルタイム40点のみでは27%の施設にしか届かない。',
-    resultType: 'facilities',
-    facilities: {
-      source: '令和7年4月入園 第一次利用調整結果 入所下限合計指数（墨田区公式PDF）',
-      sourceUrl: 'https://www.city.sumida.lg.jp/kosodate_kyouiku/kosodate_site/azukeru/hoikuen/nyuuen/shinsei_joukyou/ta80320020170821.html',
-      byAge: {
-        1: {
-          total: 107,
-          thresholds: [
-            { score: 29, count: 7  },
-            { score: 35, count: 17 },
-            { score: 40, count: 5  },
-            { score: 42, count: 52 },
-            { score: 43, count: 13 },
-            { score: 45, count: 8  },
-            { score: 49, count: 5  },
+    "adjMap": {
+      "single": 2,
+      "welfare": 3,
+      "disHeavy": 3,
+      "disMid": 2,
+      "disChild": 2,
+      "nursingHome": 2,
+      "nursingVisit": 1,
+      "unlicUsing": 2,
+      "twin": 1,
+      "returnWork": 5,
+      "nurseryCarer": 1,
+      "disaster": 3,
+      "gpInactiveYoung": -1,
+      "gpInactiveOld": 0,
+      "sibSame": 2,
+      "sibOther": 0,
+      "prevArrears": -20
+    },
+    "resultType": "facilities",
+    "facilities": {
+      "source": "令和7年度4月入園一次募集 保育園入所指数ボーダー表（江東区公式PDF）",
+      "sourceUrl": "https://www.city.koto.lg.jp/280308/kodomo/hoiku/ninka/101188.html",
+      "allAges": {
+        "total": 43,
+        "thresholds": [
+          {
+            "score": 22,
+            "count": 1
+          },
+          {
+            "score": 24,
+            "count": 13
+          },
+          {
+            "score": 26,
+            "count": 22
+          },
+          {
+            "score": 27,
+            "count": 4
+          },
+          {
+            "score": 28,
+            "count": 3
+          }
+        ]
+      },
+      "byAge": {
+        "0": {
+          "total": 15,
+          "thresholds": [
+            {
+              "score": 24,
+              "count": 8
+            },
+            {
+              "score": 26,
+              "count": 5
+            },
+            {
+              "score": 28,
+              "count": 2
+            }
+          ]
+        },
+        "1": {
+          "total": 18,
+          "thresholds": [
+            {
+              "score": 22,
+              "count": 1
+            },
+            {
+              "score": 24,
+              "count": 4
+            },
+            {
+              "score": 26,
+              "count": 10
+            },
+            {
+              "score": 27,
+              "count": 2
+            },
+            {
+              "score": 28,
+              "count": 1
+            }
+          ]
+        },
+        "2": {
+          "total": 10,
+          "thresholds": [
+            {
+              "score": 24,
+              "count": 1
+            },
+            {
+              "score": 26,
+              "count": 7
+            },
+            {
+              "score": 27,
+              "count": 2
+            }
           ]
         }
       }
-    },
+    }
   },
-  minato: {
-    name:'港区', tiebreaker:'認可外施設の利用実績（6ヶ月以上）を優先',
-    verified: true, verifiedNote:'令和7年度 公式案内確認済。待機児童ゼロ5年継続中。調整指数は推定含む',
-    specialNote:'待機児童ゼロ5年継続中。1歳クラスはフルタイム40点で65%の施設に入れる実績（令和7年4月）。',
-    resultType: 'facilities',
-    facilities: {
-      source: '令和7年4月入所1次利用調整 内定発表時の入所者最低指数（港区公式）',
-      sourceUrl: 'https://www.city.minato.tokyo.jp/hoikusien/202504.html',
-      // 年齢別: 施設数・各指数での通過可能数
-      // 22以下=22点に統一, 非公開/"-"除外
-      byAge: {
-        0: { total: 60, thresholds: [{score:22,count:16},{score:25,count:1},{score:28,count:5},{score:29,count:1},{score:31,count:3},{score:32,count:1},{score:34,count:4},{score:35,count:1},{score:36,count:1},{score:37,count:3},{score:38,count:1},{score:40,count:22},{score:41,count:1}] },
-        1: { total: 65, thresholds: [{score:22,count:17},{score:25,count:1},{score:28,count:2},{score:29,count:1},{score:31,count:2},{score:34,count:3},{score:36,count:1},{score:37,count:2},{score:38,count:1},{score:39,count:1},{score:40,count:32},{score:41,count:1},{score:42,count:1}] },
-        2: { total: 13, thresholds: [{score:22,count:2},{score:28,count:1},{score:34,count:1},{score:37,count:1},{score:40,count:6},{score:41,count:1},{score:31,count:1}] },
-        3: { total: 15, thresholds: [{score:22,count:2},{score:31,count:1},{score:34,count:1},{score:35,count:1},{score:37,count:1},{score:40,count:7},{score:41,count:2}] },
+  {
+    "id": "sumida",
+    "name": "墨田区",
+    "prefecture": "tokyo",
+    "version": "2025",
+    "verified": true,
+    "verifiedNote": "令和7年度 公式PDF（H26子ども・子育て会議資料）検証済。週単位定義・上限20。",
+    "tiebreaker": "居住期間が長い方を優先",
+    "specialNote": "42点（フルタイム40点+調整指数2点）が1歳クラスの最頻ボーダー（施設の49%）。フルタイム40点のみでは27%の施設にしか届かない。",
+    "workScores": {
+      "d20h8": 20,
+      "d20h7": 18,
+      "d20h6": 16,
+      "d20h5": 14,
+      "d20h4": 12,
+      "d16h8": 16,
+      "d16h7": 14,
+      "d16h6": 12,
+      "d16h5": 10,
+      "d16h4": 8,
+      "d12h8": 10,
+      "d12h7": 10,
+      "d12h6": 10,
+      "d12h5": 8,
+      "d12h4": 8,
+      "d48": 6,
+      "search": 6,
+      "none": 0
+    },
+    "adjMap": {
+      "single": 7,
+      "welfare": 6,
+      "disHeavy": 5,
+      "disMid": 3,
+      "disChild": 4,
+      "nursingHome": 3,
+      "nursingVisit": 2,
+      "unlicUsing": 2,
+      "soloPost": 1,
+      "twin": 2,
+      "returnWork": 2,
+      "returnWork1": 3,
+      "disaster": 20,
+      "gpInactiveYoung": -3,
+      "gpInactiveOld": 0,
+      "sibSame": 3,
+      "sibOther": 1,
+      "arrears": -2,
+      "prevArrears": -2,
+      "outOfWardIn": -1
+    },
+    "resultType": "facilities",
+    "facilities": {
+      "source": "令和7年4月入園 第一次利用調整結果 入所下限合計指数（墨田区公式PDF）",
+      "sourceUrl": "https://www.city.sumida.lg.jp/kosodate_kyouiku/kosodate_site/azukeru/hoikuen/nyuuen/shinsei_joukyou/ta80320020170821.html",
+      "byAge": {
+        "1": {
+          "total": 107,
+          "thresholds": [
+            {
+              "score": 29,
+              "count": 7
+            },
+            {
+              "score": 35,
+              "count": 17
+            },
+            {
+              "score": 40,
+              "count": 5
+            },
+            {
+              "score": 42,
+              "count": 52
+            },
+            {
+              "score": 43,
+              "count": 13
+            },
+            {
+              "score": 45,
+              "count": 8
+            },
+            {
+              "score": 49,
+              "count": 5
+            }
+          ]
+        }
       }
+    }
+  },
+  {
+    "id": "minato",
+    "name": "港区",
+    "prefecture": "tokyo",
+    "version": "2025",
+    "verified": true,
+    "verifiedNote": "令和7年度 公式案内確認済。待機児童ゼロ5年継続中。調整指数は推定含む",
+    "tiebreaker": "認可外施設の利用実績（6ヶ月以上）を優先",
+    "specialNote": "待機児童ゼロ5年継続中。1歳クラスはフルタイム40点で65%の施設に入れる実績（令和7年4月）。",
+    "workScores": {
+      "d20h8": 20,
+      "d20h7": 18,
+      "d20h6": 16,
+      "d20h5": 14,
+      "d20h4": 12,
+      "d16h8": 18,
+      "d16h7": 16,
+      "d16h6": 14,
+      "d16h5": 12,
+      "d16h4": 10,
+      "d12h8": 14,
+      "d12h7": 12,
+      "d12h6": 10,
+      "d12h5": 8,
+      "d12h4": 6,
+      "d48": 5,
+      "search": 3,
+      "none": 0
     },
+    "adjMap": {
+      "single": 0,
+      "welfare": 0,
+      "disHeavy": 0,
+      "disMid": 0,
+      "disChild": 0,
+      "nursingHome": 0,
+      "nursingVisit": 0,
+      "twin": 1,
+      "sibSame": 1,
+      "sibOther": 0,
+      "returnWork": 0,
+      "disaster": 0,
+      "gpInactiveYoung": -3,
+      "gpInactiveOld": 0
+    },
+    "resultType": "facilities",
+    "facilities": {
+      "source": "令和7年4月入所1次利用調整 内定発表時の入所者最低指数（港区公式）",
+      "sourceUrl": "https://www.city.minato.tokyo.jp/hoikusien/202504.html",
+      "byAge": {
+        "0": {
+          "total": 60,
+          "thresholds": [
+            {
+              "score": 22,
+              "count": 16
+            },
+            {
+              "score": 25,
+              "count": 1
+            },
+            {
+              "score": 28,
+              "count": 5
+            },
+            {
+              "score": 29,
+              "count": 1
+            },
+            {
+              "score": 31,
+              "count": 3
+            },
+            {
+              "score": 32,
+              "count": 1
+            },
+            {
+              "score": 34,
+              "count": 4
+            },
+            {
+              "score": 35,
+              "count": 1
+            },
+            {
+              "score": 36,
+              "count": 1
+            },
+            {
+              "score": 37,
+              "count": 3
+            },
+            {
+              "score": 38,
+              "count": 1
+            },
+            {
+              "score": 40,
+              "count": 22
+            },
+            {
+              "score": 41,
+              "count": 1
+            }
+          ]
+        },
+        "1": {
+          "total": 65,
+          "thresholds": [
+            {
+              "score": 22,
+              "count": 17
+            },
+            {
+              "score": 25,
+              "count": 1
+            },
+            {
+              "score": 28,
+              "count": 2
+            },
+            {
+              "score": 29,
+              "count": 1
+            },
+            {
+              "score": 31,
+              "count": 2
+            },
+            {
+              "score": 34,
+              "count": 3
+            },
+            {
+              "score": 36,
+              "count": 1
+            },
+            {
+              "score": 37,
+              "count": 2
+            },
+            {
+              "score": 38,
+              "count": 1
+            },
+            {
+              "score": 39,
+              "count": 1
+            },
+            {
+              "score": 40,
+              "count": 32
+            },
+            {
+              "score": 41,
+              "count": 1
+            },
+            {
+              "score": 42,
+              "count": 1
+            }
+          ]
+        },
+        "2": {
+          "total": 13,
+          "thresholds": [
+            {
+              "score": 22,
+              "count": 2
+            },
+            {
+              "score": 28,
+              "count": 1
+            },
+            {
+              "score": 31,
+              "count": 1
+            },
+            {
+              "score": 34,
+              "count": 1
+            },
+            {
+              "score": 37,
+              "count": 1
+            },
+            {
+              "score": 40,
+              "count": 6
+            },
+            {
+              "score": 41,
+              "count": 1
+            }
+          ]
+        },
+        "3": {
+          "total": 15,
+          "thresholds": [
+            {
+              "score": 22,
+              "count": 2
+            },
+            {
+              "score": 31,
+              "count": 1
+            },
+            {
+              "score": 34,
+              "count": 1
+            },
+            {
+              "score": 35,
+              "count": 1
+            },
+            {
+              "score": 37,
+              "count": 1
+            },
+            {
+              "score": 40,
+              "count": 7
+            },
+            {
+              "score": 41,
+              "count": 2
+            }
+          ]
+        }
+      }
+    }
   },
-  nakano: {
-    name:'中野区', tiebreaker:'課税所得が低い方を優先',
-    verified: true, verifiedNote:'令和7年度 公式QA確認済。フルタイム=月20日+1日7h+=20点。調整指数は推定含む',
-    specialNote:'育休延長希望で申請書を提出すると-40点。実質的に入所不可になるため注意。区は申込番号と内定園のみ公表・最低指数は非公表。',
-    resultType: 'none',
-    resultNote: '中野区は4月入所選考結果として「申込番号＋内定園」のみ公表。施設別最低指数・倍率表ともに非公開。',
-  },
-};
+  {
+    "id": "nakano",
+    "name": "中野区",
+    "prefecture": "tokyo",
+    "version": "2025",
+    "verified": true,
+    "verifiedNote": "令和7年度 公式QA確認済。フルタイム=月20日+1日7h+=20点。調整指数は推定含む",
+    "tiebreaker": "課税所得が低い方を優先",
+    "specialNote": "育休延長希望で申請書を提出すると-40点。実質的に入所不可になるため注意。区は申込番号と内定園のみ公表・最低指数は非公表。",
+    "workScores": {
+      "d20h8": 20,
+      "d20h7": 20,
+      "d20h6": 16,
+      "d20h5": 14,
+      "d20h4": 12,
+      "d16h8": 18,
+      "d16h7": 16,
+      "d16h6": 14,
+      "d16h5": 12,
+      "d16h4": 10,
+      "d12h8": 14,
+      "d12h7": 12,
+      "d12h6": 10,
+      "d12h5": 8,
+      "d12h4": 6,
+      "d48": 5,
+      "search": 3,
+      "none": 0
+    },
+    "adjMap": {
+      "single": 8,
+      "welfare": 5,
+      "disHeavy": 4,
+      "disMid": 2,
+      "disChild": 0,
+      "nursingHome": 2,
+      "nursingVisit": 1,
+      "unlicUsing": 2,
+      "soloPost": 1,
+      "twin": 1,
+      "returnWork": 3,
+      "disaster": 2,
+      "gpInactiveYoung": -2,
+      "gpInactiveOld": 0,
+      "sibSame": 2,
+      "sibOther": 0,
+      "extendLeave": -40,
+      "prevArrears": -3,
+      "outOfWardIn": -3
+    },
+    "resultType": "none",
+    "resultNote": "中野区は4月入所選考結果として「申込番号＋内定園」のみ公表。施設別最低指数・倍率表ともに非公開。"
+  }
+];
 
+// ═══════════════════════════════════════════════
+// 計算エンジン（js/calculator.js と同一ロジック）
+// ═══════════════════════════════════════════════
+/**
+ * calculator.js
+ * 純粋関数群。DOM・グローバル変数に一切依存しない。
+ * 引数は (wardData: WardJSON, conditions: Conditions) のみ。
+ *
+ * WardJSON スキーマ: /data/*.json 参照
+ * Conditions スキーマ: collectConditions() の戻り値
+ */
+
+'use strict';
+
+// ─────────────────────────────────────────────
+// 就労キーの構築
+// ─────────────────────────────────────────────
+
+/**
+ * UIの選択値（days, hours）から就労スコアキーを生成する
+ * @param {string} days  - 'dXX' | 'search' | 'none'
+ * @param {string} hours - 'hX'  | 'none'
+ * @param {boolean} disabled - 保護者②が無効化されている場合
+ * @returns {string} workKey
+ */
+function buildWorkKey(days, hours, disabled = false) {
+  if (disabled) return 'none';
+  if (days === 'none' || hours === 'none') return 'none';
+  if (days === 'search') return 'search';
+  return days + hours; // e.g. 'd20h8'
+}
+
+// ─────────────────────────────────────────────
+// 基礎指数の計算
+// ─────────────────────────────────────────────
+
+/**
+ * 1人分の就労基礎指数を返す
+ * @param {Object} workScores - wardData.workScores
+ * @param {string} workKey
+ * @returns {number}
+ */
+function getWorkScore(workScores, workKey) {
+  return workScores[workKey] ?? 0;
+}
+
+/**
+ * 両保護者の基礎指数合計を計算する
+ * ひとり親の場合は保護者①のみ
+ * @param {Object} workScores
+ * @param {Conditions} c
+ * @returns {number} base
+ */
+function calcBase(workScores, c) {
+  const p1 = getWorkScore(workScores, c.p1Work);
+  if (c.household === 'single') return p1;
+  const p2 = getWorkScore(workScores, c.p2Work);
+  return p1 + p2;
+}
+
+// ─────────────────────────────────────────────
+// 調整指数の計算
+// ─────────────────────────────────────────────
+
+/**
+ * adjMap から安全に値を取得する（存在しないキーは0）
+ * @param {Object} adjMap
+ * @param {string} key
+ * @returns {number}
+ */
+function adj(adjMap, key) {
+  return adjMap[key] ?? 0;
+}
+
+/**
+ * 調整指数の合計を計算する
+ * @param {Object} adjMap - wardData.adjMap
+ * @param {Conditions} c
+ * @returns {number}
+ */
+function calcAdj(adjMap, c) {
+  let a = 0;
+
+  // ── 世帯区分 ──
+  if (c.household === 'single')    a += adj(adjMap, 'single');
+
+  // ── 福祉・生活保護 ──
+  if (c.welfare)                   a += adj(adjMap, 'welfare');
+
+  // ── 障害・疾病 ──
+  if (c.disHeavy)                  a += adj(adjMap, 'disHeavy');
+  if (c.disMid)                    a += adj(adjMap, 'disMid');
+  if (c.disChild)                  a += adj(adjMap, 'disChild');
+  if (c.disLight)                  a += adj(adjMap, 'disLight');
+  if (c.disWork)                   a += adj(adjMap, 'disWork');
+
+  // ── 介護・看護 ──
+  if (c.nursingHome)               a += adj(adjMap, 'nursingHome');
+  if (c.nursingVisit)              a += adj(adjMap, 'nursingVisit');
+
+  // ── 認可外利用（優先度順：上位条件を先に評価し重複加算しない）──
+  if (c.unlic96h)                              a += adj(adjMap, 'unlic96h');
+  else if (c.unlic48h)                         a += adj(adjMap, 'unlic48h');
+  else if (c.unlic6m)                          a += adj(adjMap, 'unlic6m');
+  else if (c.unlic3m)                          a += adj(adjMap, 'unlic3m');
+  if (c.unlicUsing && !c.unlic96h && !c.unlic48h && !c.unlic6m && !c.unlic3m)
+                                               a += adj(adjMap, 'unlicUsing');
+
+  // ── 就労・復帰 ──
+  if (c.returnWork)                a += adj(adjMap, 'returnWork');
+  if (c.returnWork1)               a += adj(adjMap, 'returnWork1') || adj(adjMap, 'returnWork');
+  if (c.returnWork2)               a += adj(adjMap, 'returnWork2');
+  if (c.urgentJob)                 a += adj(adjMap, 'urgentJob');
+  if (c.nurseryCarer)              a += adj(adjMap, 'nurseryCarer');
+
+  // ── 世帯構成 ──
+  if (c.soloPost)                  a += adj(adjMap, 'soloPost');
+  if (c.twin)                      a += adj(adjMap, 'twin');
+  if (c.multiChild3u)              a += adj(adjMap, 'multiChild3u') || adj(adjMap, 'multiChild');
+  if (c.multiChild3e)              a += adj(adjMap, 'multiChild3e');
+  if (c.gpHeavyDis)                a += adj(adjMap, 'gpHeavyDis');
+
+  // ── 兄弟姉妹在園 ──
+  if (c.sibling === 'same')        a += adj(adjMap, 'sibSame');
+  if (c.sibling === 'other')       a += adj(adjMap, 'sibOther');
+
+  // ── 祖父母同居（保育可能 = 減算） ──
+  if (c.grandparent === 'inactive-young') a += adj(adjMap, 'gpInactiveYoung');
+  if (c.grandparent === 'inactive-old')   a += adj(adjMap, 'gpInactiveOld');
+
+  // ── 在住・勤務区分 ──
+  if (c.outOfWardIn)               a += adj(adjMap, 'outOfWardIn') || adj(adjMap, 'outOfWard');
+
+  // ── その他 ──
+  if (c.disaster)                  a += adj(adjMap, 'disaster');
+  if (c.extendLeave)               a += adj(adjMap, 'extendLeave');
+  if (c.arrears)                   a += adj(adjMap, 'arrears');
+  if (c.prevArrears)               a += adj(adjMap, 'prevArrears');
+
+  return a;
+}
+
+// ─────────────────────────────────────────────
+// メインエントリ
+// ─────────────────────────────────────────────
+
+/**
+ * 1区分のスコアを計算して返す（純粋関数）
+ *
+ * @param {Object} wardData  - /data/*.json の内容
+ * @param {Object} conditions - collectConditions() の戻り値
+ * @returns {{ base: number, adj: number, total: number }}
+ */
+function calcScore(wardData, conditions) {
+  const base = calcBase(wardData.workScores, conditions);
+  const adjTotal = calcAdj(wardData.adjMap, conditions);
+  return {
+    base,
+    adj: adjTotal,
+    total: base + adjTotal,
+  };
+}
+
+// ─────────────────────────────────────────────
+// 複数区の一括計算
+// ─────────────────────────────────────────────
+
+/**
+ * 複数区のデータを受け取り、全区スコアを計算して返す
+ *
+ * @param {Object[]} wardsArray  - wardData の配列
+ * @param {Object}   conditions  - collectConditions() の戻り値
+ * @returns {Object[]} - { wardData, base, adj, total }[] をtotal降順でソート済み
+ */
+function calcAllWards(wardsArray, conditions) {
+  return wardsArray
+    .map(wardData => {
+      const { base, adj, total } = calcScore(wardData, conditions);
+      return { wardData, base, adj, total };
+    })
+    .sort((a, b) => b.total - a.total);
+}
+
+// ─────────────────────────────────────────────
+// エクスポート（Node.js / ブラウザ両対応）
+// ─────────────────────────────────────────────
+
+// ═══════════════════════════════════════════════
+// UI / 描画
+// ═══════════════════════════════════════════════
 // ── UI helpers ──
 function clearAll() {
   // 取労ドロップダウン
@@ -1172,72 +1813,25 @@ function collectConditions() {
   };
 }
 
-// ── 1区のスコアを計算 ──
-function calcScore(wardKey, c) {
-  const ws = WORK_SCORES[wardKey];
-  const adj = ADJ_MAP[wardKey];
-
-  const base = (ws[c.p1Work] || 0) + (ws[c.p2Work] || 0);
-
-  let a = 0;
-  if (c.household === 'single')   a += adj.single;
-  if (c.welfare)                  a += adj.welfare;
-  if (c.disHeavy)                 a += adj.disHeavy;
-  if (c.disMid)                   a += adj.disMid;
-  if (c.disChild)                 a += adj.disChild;
-  if (c.nursingHome)              a += adj.nursingHome;
-  if (c.nursingVisit)             a += adj.nursingVisit;
-  if (c.unlic96h)                 a += (adj.unlic96h  || adj.unlic6m || 0);
-  if (c.unlic48h && !c.unlic96h) a += (adj.unlic48h  || adj.unlic3m || 0);
-  if (c.unlic6m && !c.unlic96h && !c.unlic48h) a += adj.unlic6m || 0;
-  if (c.unlic3m && !c.unlic96h && !c.unlic48h && !c.unlic6m) a += adj.unlic3m || 0;
-  if (c.soloPost)                 a += (adj.soloPost || 0);
-  if (c.multiChild)               a += (adj.multiChild || 0);
-  if (c.twin)                     a += (adj.twin || 0);
-  if (c.returnWork)               a += (adj.returnWork || 0);
-  if (c.disaster)                 a += (adj.disaster || 0);
-  if (c.extendLeave)              a += (adj.extendLeave || 0);
-  if (c.arrears)                  a += (adj.arrears || 0);
-  if (c.prevArrears)              a += (adj.prevArrears || 0);
-  if (c.disLight)                 a += (adj.disLight || 0);
-  if (c.disWork)                  a += (adj.disWork || 0);
-  if (c.urgentJob)                a += (adj.urgentJob || 0);
-  if (c.nurseryCarer)             a += (adj.nurseryCarer || 0);
-  if (c.gpHeavyDis)               a += (adj.gpHeavyDis || 0);
-  if (c.returnWork1)              a += (adj.returnWork1 || adj.returnWork || 0);
-  if (c.returnWork2)              a += (adj.returnWork2 || 0);
-  if (c.multiChild3u)             a += (adj.multiChild3u || adj.multiChild || 0);
-  if (c.multiChild3e)             a += (adj.multiChild3e || 0);
-  if (c.outOfWardIn)              a += (adj.outOfWardIn || adj.outOfWard || 0);
-  if (c.unlicUsing)               a += (adj.unlicUsing || adj.unlic6m || 0);
-  if (c.sibling === 'same')       a += adj.sibSame;
-  if (c.sibling === 'other')      a += adj.sibOther;
-  if (c.grandparent === 'inactive-young') a += adj.gpInactiveYoung;
-  if (c.grandparent === 'inactive-old')   a += adj.gpInactiveOld;
-
-  return { base, adj: a, total: base + a };
-}
-
 // ── 結果描画 ──
 let lastResults = [];
 let lastSort = 'score';
 
 function calculate() {
   const c = collectConditions();
-  const results = Object.entries(WARDS_META).map(([key, meta]) => {
-    // meta.verified, meta.verifiedNote を伝播
-    const { base, adj, total } = calcScore(key, c);
-    return { key, meta, base, adj, total };
+  const results = WARDS.map(wardData => {
+    const { base, adj, total } = calcScore(wardData, c);
+    return { key: wardData.id, meta: wardData, base, adj, total };
   });
 
   lastResults = results;
   renderResults(results, lastSort);
 
-  // サマリー
   const topScore = Math.max(...results.map(r => r.total));
   const topWards = results.filter(r => r.total === topScore).map(r => r.meta.name).join('・');
+  const wardCount = WARDS.length;
 
-  document.getElementById('result-title').textContent = `7区のスコア比較結果`;
+  document.getElementById('result-title').textContent = `${wardCount}区のスコア比較結果`;
   document.getElementById('result-summary').textContent =
     `最高スコア: ${topScore}点（${topWards}）`;
 
@@ -1273,7 +1867,7 @@ function renderResults(results, sortType) {
                    : 'var(--red)';
 
     const adjSign = r.adj >= 0 ? `+${r.adj}` : `${r.adj}`;
-    const rankLabel = ['🥇','🥈','🥉','4位','5位','6位','7位'][i];
+    const rankLabel = ['🥇','🥈','🥉','4位','5位','6位','7位','8位','9位','10位'][i] || `${i+1}位`;
     const meta = r.meta;
 
     // ── 結果インサイト ──
@@ -1398,6 +1992,7 @@ function renderResults(results, sortType) {
       </div>`;
   }).join('');
 }
+
 </script>
 </body>
 </html>
