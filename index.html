@@ -139,10 +139,24 @@ main {
 }
 
 @media (max-width: 900px) {
-  main { grid-template-columns: 1fr; padding: 24px 16px 80px; }
-  .input-panel { position: static; }
+  /* gridをやめて通常フローに。input-panel → result-panel が自然に縦積みになる */
+  main {
+    display: block;
+    padding: 24px 16px 48px;
+  }
+  .input-panel {
+    position: static;
+    margin-bottom: 24px;
+  }
+  .result-panel {
+    min-height: 0;
+    display: block;
+  }
+  /* 計算前はresult-panelを非表示（高さ0問題の根本対処） */
+  .result-panel:not(.has-result) {
+    display: none;
+  }
   .result-placeholder { display: none !important; }
-  .result-panel { min-height: 0; }
 }
 
 /* ── LEFT PANEL: INPUT ── */
@@ -223,7 +237,7 @@ select:focus { outline: none; border-color: var(--accent); }
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 10px;
-  margin-bottom: 12px;
+  margin-bottom: 0;
   transition: border-color 0.2s;
   user-select: none;
 }
@@ -236,12 +250,17 @@ select:focus { outline: none; border-color: var(--accent); }
   transition: transform 0.25s;
 }
 .advanced-toggle.open .advanced-toggle-arrow { transform: rotate(180deg); }
+.advanced-toggle.open {
+  border-radius: 10px 10px 0 0;
+  border-bottom-color: var(--border2);
+}
 
 .advanced-panel {
   display: none;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-top: none;
+  border-radius: 0 0 14px 14px;
   padding: 20px;
   margin-bottom: 12px;
   animation: fadeDown 0.2s ease;
@@ -477,6 +496,9 @@ footer {
   <div class="input-panel">
     <div class="panel-title">まず、状況を<br>整理しましょう。</div>
     <div class="panel-subtitle">ご家庭の就労状況などを入力すると、利用調整指数を一括で計算・比較します。</div>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:20px;padding:8px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;line-height:1.7;">
+      🗾 現在対応中の自治体：東京都（世田谷区、練馬区、江戸川区、江東区、墨田区、港区、中野区）
+    </div>
 
     <!-- 保護者① -->
     <div class="section-card">
@@ -726,7 +748,7 @@ footer {
       </div>
     </div>
 
-    <div style="display:flex;gap:10px;align-items:center;margin-bottom:4px">
+    <div class="btn-row" style="display:flex;gap:10px;align-items:center;margin-bottom:4px">
       <button onclick="clearAll()" style="flex:0 0 auto;padding:14px 20px;background:var(--warm1);border:1.5px solid var(--border2);border-radius:12px;color:var(--text2);font-size:13px;font-weight:500;cursor:pointer;transition:all 0.2s;font-family:inherit;"
         onmouseover="this.style.background='var(--warm2)';this.style.borderColor='var(--accent)'"
         onmouseout="this.style.background='var(--warm1)';this.style.borderColor='var(--border2)'">
@@ -1905,11 +1927,15 @@ function calculate() {
   document.getElementById('result-placeholder').style.display = 'none';
   document.getElementById('result-content').classList.add('visible');
 
-  // モバイルのみ結果エリアへ自動スクロール
+  // モバイル：result-panelを表示してからスクロール
   if (window.innerWidth <= 900) {
-    setTimeout(() => {
-      document.getElementById('result-content').scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 100);
+    const resultPanel = document.querySelector('.result-panel');
+    if (resultPanel) {
+      resultPanel.classList.add('has-result');
+      setTimeout(() => {
+        resultPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 50);
+    }
   }
 }
 
