@@ -140,6 +140,9 @@ main {
 
 @media (max-width: 900px) {
   main { grid-template-columns: 1fr; padding: 24px 16px 80px; }
+  .input-panel { position: static; }
+  .result-placeholder { display: none !important; }
+  .result-panel { min-height: 0; }
 }
 
 /* ── LEFT PANEL: INPUT ── */
@@ -1901,6 +1904,13 @@ function calculate() {
 
   document.getElementById('result-placeholder').style.display = 'none';
   document.getElementById('result-content').classList.add('visible');
+
+  // モバイルのみ結果エリアへ自動スクロール
+  if (window.innerWidth <= 900) {
+    setTimeout(() => {
+      document.getElementById('result-content').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  }
 }
 
 function sortResults(type, btn) {
