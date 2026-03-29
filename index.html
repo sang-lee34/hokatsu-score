@@ -89,7 +89,6 @@
   --yellow-bg: rgba(230,184,74,0.12);
   --red: #E05C5C;
   --red-bg: rgba(224,92,92,0.12);
-  --orange: #E08A3C;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -118,7 +117,7 @@ header {
   font-family: 'Syne', sans-serif;
   font-size: 18px; font-weight: 800;
   letter-spacing: -0.5px;
-  color: var(--text);   ← 変更不要（#2D2926 でテーマと一致）
+  color: var(--text);
 }
 .logo span { color: var(--accent); }
 .header-tag {
@@ -139,24 +138,17 @@ main {
 }
 
 @media (max-width: 900px) {
-  /* gridをやめて通常フローに。input-panel → result-panel が自然に縦積みになる */
   main {
     display: block;
-    padding: 24px 16px 48px;
+    padding: 24px 16px 32px;
   }
   .input-panel {
     position: static;
-    margin-bottom: 24px;
+    width: 100%;
   }
-  .result-panel {
-    min-height: 0;
-    display: block;
+  .result-panel > .result-content > div {
+    padding: 24px 16px 0;
   }
-  /* 計算前はresult-panelを非表示（高さ0問題の根本対処） */
-  .result-panel:not(.has-result) {
-    display: none;
-  }
-  .result-placeholder { display: none !important; }
 }
 
 /* ── LEFT PANEL: INPUT ── */
@@ -269,7 +261,11 @@ select:focus { outline: none; border-color: var(--accent); }
 
 @keyframes fadeDown {
   from { opacity: 0; transform: translateY(-6px); }
-  to { opacity: 1; transform: translateY(0); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 /* ── CHECKBOX GRID ── */
@@ -335,29 +331,15 @@ select:focus { outline: none; border-color: var(--accent); }
 .calc-btn:active { transform: translateY(0); }
 
 /* ── RIGHT PANEL: RESULTS ── */
-.result-panel { min-height: 200px; }
-
-.result-placeholder {
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  min-height: 400px;
-  color: var(--text3);
-  text-align: center;
-  border: 1px dashed var(--border);
-  border-radius: 16px;
+.result-panel {
+  min-height: 0;
+  background: var(--bg);
+  padding-bottom: 60px;
 }
-.result-placeholder-icon { font-size: 40px; margin-bottom: 12px; opacity: 0.4; }
-.result-placeholder-text { font-size: 13px; line-height: 1.7; }
 
-.result-content { display: none; }
-.result-content.visible {
+
+.result-content {
   display: block;
-  animation: fadeUp 0.35s ease;
-}
-
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
 }
 
 .result-header {
@@ -383,9 +365,6 @@ select:focus { outline: none; border-color: var(--accent); }
   animation: fadeUp 0.3s ease both;
 }
 .ward-card:hover { border-color: var(--border2); }
-.ward-card.status-ok { border-left: 3px solid var(--green); }
-.ward-card.status-border { border-left: 3px solid var(--yellow); }
-.ward-card.status-ng { border-left: 3px solid var(--red); }
 
 .ward-card-top {
   display: flex; align-items: center; justify-content: space-between;
@@ -414,8 +393,6 @@ select:focus { outline: none; border-color: var(--accent); }
   line-height: 1;
 }
 .score-unit { font-size: 13px; color: var(--text2); }
-.score-sep { color: var(--text3); font-size: 13px; }
-.score-border-val { font-size: 13px; color: var(--text2); }
 
 /* Progress bar */
 .progress-wrap {
@@ -758,14 +735,12 @@ footer {
     </div>
   </div>
 
-  <!-- ── RIGHT: RESULT PANEL ── -->
-  <div class="result-panel">
-    <div class="result-placeholder" id="result-placeholder">
-      <div class="result-placeholder-icon">🗺️</div>
-      <div class="result-placeholder-text">条件を入力して<br>計算ボタンを押すと<br>7区の比較結果が表示されます</div>
-    </div>
+</main>
 
-    <div class="result-content" id="result-content">
+<!-- ── RESULT PANEL（mainの外・常に入力フォームの下）── -->
+<div class="result-panel" id="result-panel" style="display:none">
+  <div class="result-content" id="result-content">
+    <div style="max-width:1100px;margin:0 auto;padding:32px 32px 0;">
       <div class="result-header">
         <div class="result-title" id="result-title">—</div>
         <div class="result-summary" id="result-summary">—</div>
@@ -780,7 +755,7 @@ footer {
       <div id="ward-cards"></div>
     </div>
   </div>
-</main>
+</div>
 
 <footer>
   <div style="max-width:1100px;margin:0 auto;padding:24px 32px;">
@@ -1833,7 +1808,7 @@ function toggleAdvanced() {
   panel.classList.toggle('open');
 }
 
-function toggleCheck(id, isDanger) {
+function toggleCheck(id) {
   const item = document.getElementById(id);
   const cb = item.querySelector('input');
   item.classList.toggle('checked', cb.checked);
@@ -1854,19 +1829,19 @@ function syncHousehold() {
 }
 
 // ── 条件を収集 ──
+function buildWork(prefix) {
+  const d = document.getElementById(prefix + '-days');
+  const h = document.getElementById(prefix + '-hours');
+  if (d.disabled) return 'none';
+  if (d.value === 'none' || h.value === 'none') return 'none';
+  if (d.value === 'search') return 'search';
+  return d.value + h.value;
+}
+
 function collectConditions() {
   return {
-    p1Work: (()=>{
-      const d=document.getElementById('p1-days').value;
-      const h=document.getElementById('p1-hours').value;
-      return (d==='none'||h==='none') ? 'none' : (d==='search') ? 'search' : d+h;
-    })(),
-    p2Work: (()=>{
-      const d=document.getElementById('p2-days').value;
-      const h=document.getElementById('p2-hours').value;
-      if(document.getElementById('p2-days').disabled) return 'none';
-      return (d==='none'||h==='none') ? 'none' : (d==='search') ? 'search' : d+h;
-    })(),
+    p1Work: buildWork('p1'),
+    p2Work: buildWork('p2'),
     household: document.getElementById('household').value,
     grandparent: document.getElementById('grandparent').value,
     sibling: document.getElementById('sibling').value,
@@ -1881,7 +1856,6 @@ function collectConditions() {
     unlic6m:      document.getElementById('chk-unlic-6m').checked,
     unlic3m:      document.getElementById('chk-unlic-3m').checked,
     soloPost:     document.getElementById('chk-solo-post').checked,
-    multiChild:   false, // deprecated — use multiChild3u/multiChild3e
     twin:         document.getElementById('chk-twin').checked,
     returnWork:   document.getElementById('chk-return-work').checked,
     disaster:     document.getElementById('chk-disaster').checked,
@@ -1924,18 +1898,13 @@ function calculate() {
   document.getElementById('result-summary').textContent =
     `最高スコア: ${topScore}点（${topWards}）`;
 
-  document.getElementById('result-placeholder').style.display = 'none';
-  document.getElementById('result-content').classList.add('visible');
-
-  // モバイル：result-panelを表示してからスクロール
-  if (window.innerWidth <= 900) {
-    const resultPanel = document.querySelector('.result-panel');
-    if (resultPanel) {
-      resultPanel.classList.add('has-result');
-      setTimeout(() => {
-        resultPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 50);
-    }
+  // result-panelを表示してスクロール（mainの外なので確実に入力フォームの下）
+  const resultPanel = document.getElementById('result-panel');
+  if (resultPanel) {
+    resultPanel.style.display = 'block';
+    setTimeout(() => {
+      resultPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 80);
   }
 }
 
@@ -1947,11 +1916,8 @@ function sortResults(type, btn) {
 }
 
 function renderResults(results, sortType) {
-  const sorted = [...results].sort((a, b) => {
-    if (sortType === 'score') return b.total - a.total;
-    if (sortType === 'margin') return b.total - a.total;
-    return 0;
-  });
+  // score/margin はいずれも合計点降順（将来margin独自ロジック追加時にここを変更）
+  const sorted = [...results].sort((a, b) => b.total - a.total);
 
   const maxTotal = Math.max(...sorted.map(r => r.total));
 
