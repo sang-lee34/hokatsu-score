@@ -1386,4 +1386,18 @@ function renderResults(results, sortType) {
           <div class="score-unit">点</div>
         </div>
         <div class="progress-wrap">
-          <div class="progress-bar" style="width:${p
+          <div class="progress-bar" style="width:${pct}%;background:${barColor}"></div>
+        </div>
+        <div class="ward-detail">
+          <div class="ward-detail-item">基礎指数 <span class="ward-detail-val">${r.base}</span>点</div>
+          <div class="ward-detail-item">調整指数 <span class="ward-detail-val">${adjSign}</span>点</div>
+          <div class="ward-detail-item" style="font-weight:700">合計 <span class="ward-detail-val" style="color:${barColor}">${r.total}</span>点</div>
+        </div>
+        ${resultInsight}
+        ${meta.specialNote ? `<div class="ward-note">💡 ${meta.specialNote}</div>` : ''}
+      </div>`;
+  }).join('');
+}
+</script>
+</body>
+</html>
