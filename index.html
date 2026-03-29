@@ -4,6 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>保活マップ — 区別入所スコア比較</title>
+<script>
+  window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/speed-insights/script.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -737,7 +741,7 @@ const WORK_SCORES = {
     d48:22, search:10, none:0
   },
 
-  // ── 江戸川区（令和7年度 公式QA検証済）──
+  // ── 江戸川区（令和7年度 公式QA検証済）─���
   // 公式例: 月20日+7h+→50点, 月16日+7h+→40点, ひとり親+10, 未就学3人以上+1
   // 基準指数上限50, 世田谷と同スケール。8h/7hの詳細分岐は公式未確認のため近似
   edogawa: {

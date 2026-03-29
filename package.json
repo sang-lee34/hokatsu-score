@@ -1,0 +1,9 @@
+{
+  "name": "hokatsu-score",
+  "version": "1.0.0",
+  "description": "保活マップ — 区別入所スコア比較",
+  "private": true,
+  "dependencies": {
+    "@vercel/speed-insights": "^1.0.12"
+  }
+}
