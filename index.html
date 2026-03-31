@@ -570,7 +570,7 @@ footer {
         </div>
         <div class="form-row">
           <div class="form-label">希望入所年齢</div>
-          <select id="child-age">
+          <select id="child-age" onchange="syncChildAge()">
             <option value="0">0歳児</option>
             <option value="1">1歳児</option>
             <option value="2">2歳児</option>
@@ -1101,6 +1101,7 @@ const WARDS = [
       "unlicUsing": 2,
       "twin": 1,
       "returnWork": 5,
+      "returnWork1": 2,
       "nurseryCarer": 1,
       "disaster": 3,
       "gpInactiveYoung": -1,
@@ -1825,6 +1826,25 @@ function syncHousehold() {
   } else {
     p2d.disabled = false; p2d.style.opacity = '1';
     p2h.disabled = false; p2h.style.opacity = '1';
+  }
+}
+
+function syncChildAge() {
+  const age = document.getElementById('child-age').value;
+  const chk1 = document.getElementById('chk-return-work1');
+  const chk2 = document.getElementById('chk-return-work2');
+  // 1歳クラス → returnWork1 を自動ON、returnWork2 をOFF
+  if (age === '1') {
+    chk1.checked = true;  toggleCheck('item-return-work1');
+    chk2.checked = false; toggleCheck('item-return-work2');
+  // 2歳以上 → returnWork2 を自動ON、returnWork1 をOFF
+  } else if (age === '2' || age === '3') {
+    chk1.checked = false; toggleCheck('item-return-work1');
+    chk2.checked = true;  toggleCheck('item-return-work2');
+  // 0歳 → 両方OFF
+  } else {
+    chk1.checked = false; toggleCheck('item-return-work1');
+    chk2.checked = false; toggleCheck('item-return-work2');
   }
 }
 
