@@ -713,7 +713,7 @@ footer {
         onmouseout="this.style.background='var(--warm1)';this.style.borderColor='var(--border2)'">
         ↺ 条件をリセット
       </button>
-      <button class="calc-btn" onclick="calculate()" style="flex:1;">7区のスコアを確認する →</button>
+      <button class="calc-btn" onclick="calculate()" style="flex:1;">あなたのスコアを確認する →</button>
     </div>
   </div>
 
@@ -1043,9 +1043,9 @@ const WARDS = [
     "prefecture": "tokyo",
     "version": "2025",
     "verified": true,
-    "verifiedNote": "令和7年度 公式しおり・複数公式情報確認済。フルタイム共働き12+12=24点。",
+    "verifiedNote": "令和8年度 公式PDF（令和8年4月入園一次利用調整結果ボーダー表）検証済。1歳クラス207施設分（うち138施設に競争ボーダーあり、60施設は競争なし）を集計。",
     "tiebreaker": "兄弟姉妹の在園状況を優先",
-    "specialNote": "スケール最小（上限12）。ボーダー中央値26点（令和7年4月実績）。24点では約33%の施設にしか届かない。",
+    "specialNote": "フルタイム共働きで24点。令和8年4月実績では26点が競争ボーダーあり138施設中103施設（75%）のボーダー。60施設（30%）は競争なし（残枠あり・全員入所）。育休復帰+5点が最大の調整指数。",
     "workScores": {
       "d20h8": 12,
       "d20h7": 11,
@@ -1088,91 +1088,24 @@ const WARDS = [
     },
     "resultType": "facilities",
     "facilities": {
-      "source": "令和7年度4月入園一次募集 保育園入所指数ボーダー表（江東区公式PDF）",
+      "source": "令和8年4月入園一次利用調整結果 ボーダー表（江東区公式PDF）",
       "sourceUrl": "https://www.city.koto.lg.jp/280308/kodomo/hoiku/ninka/101188.html",
-      "allAges": {
-        "total": 43,
-        "thresholds": [
-          {
-            "score": 22,
-            "count": 1
-          },
-          {
-            "score": 24,
-            "count": 13
-          },
-          {
-            "score": 26,
-            "count": 22
-          },
-          {
-            "score": 27,
-            "count": 4
-          },
-          {
-            "score": 28,
-            "count": 3
-          }
-        ]
-      },
       "byAge": {
-        "0": {
-          "total": 15,
-          "thresholds": [
-            {
-              "score": 24,
-              "count": 8
-            },
-            {
-              "score": 26,
-              "count": 5
-            },
-            {
-              "score": 28,
-              "count": 2
-            }
-          ]
-        },
         "1": {
-          "total": 18,
+          "total": 198,
           "thresholds": [
-            {
-              "score": 22,
-              "count": 1
-            },
-            {
-              "score": 24,
-              "count": 4
-            },
-            {
-              "score": 26,
-              "count": 10
-            },
-            {
-              "score": 27,
-              "count": 2
-            },
-            {
-              "score": 28,
-              "count": 1
-            }
-          ]
-        },
-        "2": {
-          "total": 10,
-          "thresholds": [
-            {
-              "score": 24,
-              "count": 1
-            },
-            {
-              "score": 26,
-              "count": 7
-            },
-            {
-              "score": 27,
-              "count": 2
-            }
+            { "score": 0,  "count": 60,  "note": "残枠あり・全員入所（競争なし）" },
+            { "score": 8,  "count": 1  },
+            { "score": 16, "count": 2  },
+            { "score": 18, "count": 1  },
+            { "score": 20, "count": 2  },
+            { "score": 21, "count": 2  },
+            { "score": 23, "count": 1  },
+            { "score": 24, "count": 7  },
+            { "score": 25, "count": 4  },
+            { "score": 26, "count": 103},
+            { "score": 27, "count": 5  },
+            { "score": 28, "count": 10 }
           ]
         }
       }
@@ -2347,15 +2280,12 @@ function renderResults(results) {
         <div class="ward-card-top">
           <div class="ward-name">${meta.name}</div>
           <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-            ${meta.verified ? '<div class="ward-badge badge-ok" style="font-size:10px;padding:2px 6px;">PDF検証済</div>' : '<div class="ward-badge badge-border" style="font-size:10px;padding:2px 6px;">推定含む</div>'}
+            ${meta.verified ? '<div class="ward-badge badge-ok" style="font-size:10px;padding:2px 6px;">元データ確認済</div>' : '<div class="ward-badge badge-border" style="font-size:10px;padding:2px 6px;">推定含む</div>'}
           </div>
         </div>
         ${heroBlock}
-        ${resultInsight}
         <div class="ward-detail" style="margin-top:10px">
-          <div class="ward-detail-item">指数 <span class="ward-detail-val">${r.total}点</span></div>
-          <div class="ward-detail-item">基礎 <span class="ward-detail-val">${r.base}点</span></div>
-          <div class="ward-detail-item">調整 <span class="ward-detail-val">${adjSign}点</span></div>
+          <div class="ward-detail-item">あなたの指数（基礎 <span class="ward-detail-val">${r.base}点</span> ＋ 調整 <span class="ward-detail-val">${adjSign}点</span>）</div>
         </div>
         ${meta.specialNote ? `<div class="ward-note">${meta.specialNote}</div>` : ""}
       </div>`;
