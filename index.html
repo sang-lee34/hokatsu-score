@@ -444,7 +444,7 @@ footer {
       <div class="logo">保活指数<span>シミュレーター</span></div>
       <div class="header-tag">東京11区・利用調整指数 一括比較</div>
     </div>
-    <a href="/cdn-cgi/l/email-protection#9bf3f4f0faefe8eeb5f0fef2e8faf5dbfcf6faf2f7b5f8f4f6a4e8eef9f1fef8efa6781b0b7f24067d2f207819227819287819397333137c350c7d3204781b0a781a117e0e14781a1f7e0b13781914781a00bdf9f4ffe2a6781a117e0b167e1216742701beabda781a117e0e14781a1f7e0b13781914781a007e1d1e7e3522742701beabda" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:var(--warm2);border:1.5px solid var(--border2);border-radius:20px;color:var(--text2);font-size:12px;font-weight:500;text-decoration:none;transition:all 0.2s;white-space:nowrap;" onmouseover="this.style.background='var(--border2)';this.style.color='var(--text)'" onmouseout="this.style.background='var(--warm2)';this.style.color='var(--text2)'">
+    <a href="/cdn-cgi/l/email-protection#026a6d69637671772c69676b71636c42656f636b6e2c616d6f3d717760686761763fe18292e6bd9fe4b6b9e180bbe180b1e180a0eaaa8ae5ac95e4ab9de18293e18388e7978de18386e7928ae1808de1839924606d667b3fe18388e7928fe78b8fedbe98273243e18388e7978de18386e7928ae1808de18399e78487e7acbbedbe98273243" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:var(--warm2);border:1.5px solid var(--border2);border-radius:20px;color:var(--text2);font-size:12px;font-weight:500;text-decoration:none;transition:all 0.2s;white-space:nowrap;" onmouseover="this.style.background='var(--border2)';this.style.color='var(--text)'" onmouseout="this.style.background='var(--warm2)';this.style.color='var(--text2)'">
       ✉ お問い合わせ
     </a>
   </div>
@@ -742,7 +742,7 @@ footer {
     </p>
     <p style="font-size:12px;color:var(--text3);">
       対応区：世田谷区・練馬区・江戸川区・江東区・墨田区・港区・中野区・足立区・杉並区・品川区・中央区　／　
-      データ出典：各区公式PDF・令和7年度版　／　お問い合わせ：<a href="/cdn-cgi/l/email-protection#49212622283d3a3c67222c203a2827092e24282025672a2624763a3c2b232c2a3d74aac9d9adf6d4affdf2aacbf0aacbfaaacbeba1e1c1aee7deafe0d6aac9d8aac8c3acdcc6aac8cdacd9c1aacbc6aac8d26f2b262d3074aac8c3acd9c4acc0c4a6f5d36c7908aac8c3acdcc6aac8cdacd9c1aacbc6aac8d2accfccace7f0a6f5d36c7908" style="color:var(--accent);"><span class="__cf_email__" data-cfemail="660e090d07121513480d030f15070826010b070f0a4805090b">[email&#160;protected]</span></a>
+      データ出典：各区公式PDF・令和7年度版　／　お問い合わせ：<a href="/cdn-cgi/l/email-protection#036b6c68627770762d68666a70626d43646e626a6f2d606c6e3c707661696660773ee08393e7bc9ee5b7b8e081bae081b0e081a1ebab8be4ad94e5aa9ce08392e08289e6968ce08287e6938be0818ce0829825616c677a3ee08289e6938ee68a8eecbf99263342e08289e6968ce08287e6938be0818ce08298e68586e6adbaecbf99263342" style="color:var(--accent);"><span class="__cf_email__" data-cfemail="8ce4e3e7edf8fff9a2e7e9e5ffede2ccebe1ede5e0a2efe3e1">[email&#160;protected]</span></a>
     </p>
   </div>
 </footer>
@@ -797,7 +797,7 @@ const WARDS = [
       "unlic96h": 6,
       "unlic48h": 5,
       "prevArrears": -20,
-      "outOfWard": -10,
+      "outOfWardIn": -10,
       "gpInactiveYoung": 0,
       "gpInactiveOld": 0
     },
@@ -1612,52 +1612,84 @@ const WARDS = [
     "name": "足立区",
     "prefecture": "tokyo",
     "version": "2025",
-    "verified": false,
-    "verifiedNote": "令和7年度 公式申込案内・キズナシッター等複数二次情報より推計。フルタイム=月20日以上・1日8時間以上=23点（1人）。要公式PDF検証。",
-    "tiebreaker": "区内在住期間が長い世帯を優先",
-    "specialNote": "フルタイム共働きで46点。待機児童はほぼゼロだが人気園は50点台が必要。調整指数が27項目と多く加点を狙いやすい区。",
+    "verified": true,
+    "verifiedNote": "令和8年度 公式保育実施基準表PDF（基準指数・調整指数）全項目検証済。ボーダーデータは令和8年4月入所認可保育所等内定最低指数一覧（公式PDF）より158施設分を集計。",
+    "tiebreaker": "課税所得が低い世帯を優先（同指数の場合）",
+    "specialNote": "フルタイム共働きで46点（23×2）。令和8年4月実績では46点が158施設中81施設（51%）のボーダー。調整指数は31項目と多く、ひとり親+5・保育料滞納-20・区外在住-20など振れ幅が大きい。介護・看護は調整指数ではなく基準指数（別カテゴリ）で判断。",
     "workScores": {
       "d20h8": 23,
-      "d20h7": 21,
-      "d20h6": 19,
-      "d20h5": 17,
-      "d20h4": 15,
-      "d16h8": 20,
-      "d16h7": 18,
+      "d20h7": 18,
+      "d20h6": 18,
+      "d20h5": 16,
+      "d20h4": 16,
+      "d16h8": 18,
+      "d16h7": 16,
       "d16h6": 16,
       "d16h5": 14,
-      "d16h4": 12,
+      "d16h4": 14,
       "d12h8": 16,
       "d12h7": 14,
-      "d12h6": 12,
-      "d12h5": 10,
-      "d12h4": 8,
-      "d48": 6,
-      "search": 4,
+      "d12h6": 14,
+      "d12h5": 12,
+      "d12h4": 12,
+      "d48": 10,
+      "search": 3,
       "none": 0
     },
     "adjMap": {
-      "single": 5,
-      "welfare": 3,
-      "disHeavy": 4,
-      "disMid": 2,
-      "disChild": 3,
-      "nursingHome": 3,
-      "nursingVisit": 2,
-      "unlicUsing": 2,
-      "returnWork": 3,
-      "soloPost": 1,
-      "twin": 2,
-      "multiChild3u": 2,
-      "sibSame": 2,
-      "sibOther": 0,
-      "gpInactiveYoung": -3,
-      "gpInactiveOld": 0,
-      "prevArrears": -5,
-      "outOfWardIn": -2
+      "single":          5,
+      "welfare":         2,
+      "disHeavy":        3,
+      "disMid":          2,
+      "disChild":        2,
+      "nursingHome":     0,
+      "nursingVisit":    0,
+      "unlicUsing":      2,
+      "returnWork":      0,
+      "soloPost":        2,
+      "twin":            1,
+      "multiChild3u":    1,
+      "sibSame":         2,
+      "sibOther":        2,
+      "gpInactiveYoung": -1,
+      "gpInactiveOld":    0,
+      "prevArrears":    -20,
+      "outOfWardIn":    -20,
+      "gpHeavyDis":      1,
+      "urgentJob":       2,
+      "nurseryCarer":    2
     },
-    "resultType": "none",
-    "resultNote": "足立区は施設別ボーダー一覧を公開中（令和7年4月分）。データ取込み作業中。"
+    "resultType": "facilities",
+    "facilities": {
+      "source": "令和8年4月入所 認可保育所・区立認定こども園 入所内定最低指数一覧（足立区公式PDF）",
+      "sourceUrl": "https://www.city.adachi.tokyo.jp/hoiku/shisetu/hoikuen/nyusho.html",
+      "byAge": {
+        "1": {
+          "total": 158,
+          "thresholds": [
+            { "score": 6,  "count": 2  },
+            { "score": 9,  "count": 2  },
+            { "score": 13, "count": 1  },
+            { "score": 26, "count": 5  },
+            { "score": 27, "count": 1  },
+            { "score": 29, "count": 2  },
+            { "score": 35, "count": 3  },
+            { "score": 38, "count": 1  },
+            { "score": 39, "count": 6  },
+            { "score": 40, "count": 1  },
+            { "score": 41, "count": 1  },
+            { "score": 42, "count": 1  },
+            { "score": 43, "count": 3  },
+            { "score": 44, "count": 3  },
+            { "score": 46, "count": 81 },
+            { "score": 47, "count": 1  },
+            { "score": 48, "count": 36 },
+            { "score": 49, "count": 3  },
+            { "score": 50, "count": 5  }
+          ]
+        }
+      }
+    }
   },
   {
     "id": "suginami",
@@ -2146,6 +2178,7 @@ function collectConditions() {
 
 // ── 結果描画 ──
 let lastResults = [];
+
 function calculate() {
   const c = collectConditions();
   const results = WARDS.map(wardData => {
@@ -2157,11 +2190,10 @@ function calculate() {
   renderResults(results);
 
   const wardCount = WARDS.length;
-  // 施設データがある区のうち最もpassCountが多い区を要約に
-  const withFacilities = results.filter(r => r.meta.resultType === 'facilities' && r.meta.facilities);
-  let summaryText = '';
+  const targetAge = parseInt(document.getElementById("child-age").value) || 1;
+  const withFacilities = results.filter(r => r.meta.resultType === "facilities" && r.meta.facilities);
+  let summaryText = "";
   if (withFacilities.length > 0) {
-    const targetAge = parseInt(document.getElementById('child-age').value) || 1;
     const best = withFacilities.reduce((acc, r) => {
       const fac = r.meta.facilities;
       const ageData = fac.byAge && fac.byAge[targetAge] ? fac.byAge[targetAge] : fac.allAges;
@@ -2171,30 +2203,28 @@ function calculate() {
       return passCount > (acc.passCount || -1) ? { r, passCount, total: ageData.total } : acc;
     }, {});
     if (best.r) {
-      summaryText = `最多 ${best.r.meta.name}：${best.passCount} / ${best.total}施設に届く（1歳クラス）`;
+      summaryText = `最多 ${best.r.meta.name}：${best.passCount} / ${best.total}施設に届く`;
     }
   }
 
-  document.getElementById('result-title').textContent = `${wardCount}区の比較結果`;
-  document.getElementById('result-summary').textContent = summaryText;
+  document.getElementById("result-title").textContent = `${wardCount}区の比較結果`;
+  document.getElementById("result-summary").textContent = summaryText;
 
-  const resultPanel = document.getElementById('result-panel');
+  const resultPanel = document.getElementById("result-panel");
   if (resultPanel) {
-    resultPanel.style.display = 'block';
+    resultPanel.style.display = "block";
     setTimeout(() => {
-      resultPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      resultPanel.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 80);
   }
 }
 
 function renderResults(results) {
-  const targetAge = parseInt(document.getElementById('child-age').value) || 1;
+  const targetAge = parseInt(document.getElementById("child-age").value) || 1;
 
-  // 施設数を計算してから並び替え
-  // facilities区: passCount降順 → 施設データなし区: total降順で末尾
   const enriched = results.map(r => {
     let passCount = null, totalFac = null;
-    if (r.meta.resultType === 'facilities' && r.meta.facilities) {
+    if (r.meta.resultType === "facilities" && r.meta.facilities) {
       const fac = r.meta.facilities;
       const ageData = fac.byAge && fac.byAge[targetAge] ? fac.byAge[targetAge] : fac.allAges;
       if (ageData) {
@@ -2215,29 +2245,27 @@ function renderResults(results) {
     return b.total - a.total;
   });
 
-  document.getElementById('ward-cards').innerHTML = sorted.map((r, i) => {
+  document.getElementById("ward-cards").innerHTML = sorted.map((r, i) => {
     const adjSign = r.adj >= 0 ? `+${r.adj}` : `${r.adj}`;
     const meta = r.meta;
+    let heroBlock = "";
+    let resultInsight = "";
 
-    // ── 施設インサイト（主役ブロック）──
-    let heroBlock = '';
-    let resultInsight = '';
-
-    if (meta.resultType === 'facilities' && meta.facilities) {
+    if (meta.resultType === "facilities" && meta.facilities) {
       const fac = meta.facilities;
       const ageData = fac.byAge && fac.byAge[targetAge] ? fac.byAge[targetAge] : fac.allAges;
       if (ageData) {
         const passCount = r.passCount;
         const totalFac = r.totalFac;
         const passPct = Math.round(passCount / totalFac * 100);
-        const passColor = passPct >= 60 ? 'var(--green)' : passPct >= 30 ? 'var(--yellow)' : 'var(--red)';
+        const passColor = passPct >= 60 ? "var(--green)" : passPct >= 30 ? "var(--yellow)" : "var(--red)";
 
         heroBlock = `
           <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:6px">
             <span style="font-family:'Syne',sans-serif;font-size:36px;font-weight:800;line-height:1;color:${passColor}">${passCount}</span>
             <span style="font-size:14px;color:var(--text2)">/ ${totalFac}施設に入れる見込み</span>
           </div>
-          <div style="font-size:11px;color:var(--text3);margin-bottom:10px">令和7年4月 1歳クラス実績ボーダーとの比較</div>`;
+          <div style="font-size:11px;color:var(--text3);margin-bottom:10px">1歳クラス実績ボーダーとの比較</div>`;
 
         resultInsight = `
           <div style="padding:10px 12px;background:var(--surface2);border-radius:8px;border:1px solid var(--border)">
@@ -2245,20 +2273,20 @@ function renderResults(results) {
               ${ageData.thresholds.slice().sort((a,b)=>a.score-b.score).map(t => {
                 const h = Math.max(4, Math.round(t.count / totalFac * 100));
                 const isPass = r.total >= t.score;
-                return `<div style="flex:${t.count};height:${h}px;background:${isPass?passColor:'var(--border2)'};border-radius:2px;min-width:3px" title="${t.score}点: ${t.count}施設"></div>`;
-              }).join('')}
+                return `<div style="flex:${t.count};height:${h}px;background:${isPass?passColor:"var(--border2)"};border-radius:2px;min-width:3px" title="${t.score}点: ${t.count}施設"></div>`;
+              }).join("")}
             </div>
             <div style="display:flex;gap:6px;flex-wrap:wrap;font-size:10px;color:var(--text3)">
               ${ageData.thresholds.slice().sort((a,b)=>a.score-b.score).map(t => {
                 const isPass = r.total >= t.score;
-                return `<span style="${isPass?'color:'+passColor+';font-weight:700':''}">${t.score}点×${t.count}</span>`;
-              }).join('')}
+                return `<span style="${isPass?"color:"+passColor+";font-weight:700":""}">)${t.score}点×${t.count}</span>`;
+              }).join("")}
             </div>
             <div style="font-size:10px;color:var(--text3);margin-top:6px">出典: ${fac.source}</div>
           </div>`;
       }
 
-    } else if (meta.resultType === 'distribution' && meta.distribution) {
+    } else if (meta.resultType === "distribution" && meta.distribution) {
       const dist = meta.distribution;
       let above = 0, atSame = 0;
       for (const b of dist.buckets) {
@@ -2266,11 +2294,10 @@ function renderResults(results) {
         else if (r.total >= b.min && r.total <= b.max) atSame += b.count;
       }
       const totalN = dist.total || 100;
-      const belowPct = Math.round(((above + atSame) / totalN) * 100);
-      const topPct = 100 - belowPct;
-      let insightColor = topPct <= 5 ? 'var(--green)' : topPct <= 15 ? 'var(--accent)' : topPct <= 50 ? 'var(--yellow)' : 'var(--red)';
-      let insightLabel = topPct <= 5 ? `上位${topPct===0?'最上位':topPct+'%'}圏` : topPct <= 50 ? `上位${topPct}%圏` : `下位${100-topPct}%圏`;
-      const sameTxt = dist.total ? `同点帯 ${atSame.toLocaleString()}人（全体の${Math.round(atSame/totalN*100)}%）` : `（件数非公表・推計）`;
+      const topPct = 100 - Math.round(((above + atSame) / totalN) * 100);
+      let insightColor = topPct <= 5 ? "var(--green)" : topPct <= 15 ? "var(--accent)" : topPct <= 50 ? "var(--yellow)" : "var(--red)";
+      let insightLabel = topPct <= 50 ? `上位${topPct===0?"最上位":topPct+"%"}圏` : `下位${100-topPct}%圏`;
+      const sameTxt = dist.total ? `同点帯 ${atSame.toLocaleString()}人（全体の${Math.round(atSame/totalN*100)}%）` : `（推計）`;
 
       heroBlock = `
         <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px">
@@ -2284,36 +2311,35 @@ function renderResults(results) {
             ${dist.buckets.map(b => {
               const w = Math.round(b.count / totalN * 100);
               const isHere = r.total >= b.min && r.total <= b.max;
-              return `<div style="flex:${Math.max(w,1)};background:${isHere?'var(--accent)':'var(--border2)'};min-width:2px" title="${b.label}: ${b.count}"></div>`;
-            }).join('')}
+              return `<div style="flex:${Math.max(w,1)};background:${isHere?"var(--accent)":"var(--border2)"};min-width:2px" title="${b.label}: ${b.count}"></div>`;
+            }).join("")}
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;font-size:10px;color:var(--text3)">
             ${dist.buckets.map(b => {
               const isHere = r.total >= b.min && r.total <= b.max;
-              return `<span ${isHere?'style="color:var(--accent);font-weight:700"':''}>${b.label}</span>`;
-            }).join('')}
+              return `<span ${isHere?"style='color:var(--accent);font-weight:700'":""}>)${b.label}</span>`;
+            }).join("")}
           </div>
           <div style="font-size:10px;color:var(--text3);margin-top:4px">出典: ${dist.source}</div>
         </div>`;
 
-    } else if (meta.resultType === 'competition' && meta.competition) {
+    } else if (meta.resultType === "competition" && meta.competition) {
       const comp = meta.competition;
       const d = comp.age1;
-      const compColor = d.medianRatio >= 10 ? 'var(--red)' : d.medianRatio >= 5 ? 'var(--yellow)' : 'var(--green)';
+      const compColor = d.medianRatio >= 10 ? "var(--red)" : d.medianRatio >= 5 ? "var(--yellow)" : "var(--green)";
       heroBlock = `
         <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:6px">
           <span style="font-family:'Syne',sans-serif;font-size:36px;font-weight:800;line-height:1;color:${compColor}">${d.medianRatio}<span style="font-size:16px;font-weight:400">倍</span></span>
           <span style="font-size:13px;color:var(--text2)">競争倍率（中央値）</span>
         </div>
-        <div style="font-size:11px;color:var(--text3);margin-bottom:10px">令和7年4月 1歳クラス ${d.sampleSize}施設</div>`;
-
+        <div style="font-size:11px;color:var(--text3);margin-bottom:10px">1歳クラス ${d.sampleSize}施設</div>`;
       resultInsight = `
         <div style="padding:10px 12px;background:var(--surface2);border-radius:8px;border:1px solid var(--border);font-size:11px;color:var(--text3)">
           平均倍率: ${d.avgRatio}倍 / 倍率3未満: <span style="color:var(--green)">${d.under3}施設</span> / 倍率10以上: <span style="color:var(--red)">${d.over10}施設</span>
           <div style="font-size:10px;margin-top:4px">出典: ${comp.source}</div>
         </div>`;
     } else {
-      resultInsight = `<div style="font-size:11px;color:var(--text3);margin-top:4px">📋 ${meta.resultNote || '実績データ：未収集'}</div>`;
+      resultInsight = `<div style="font-size:11px;color:var(--text3);margin-top:4px">📋 ${meta.resultNote || "実績データ：未収集"}</div>`;
     }
 
     return `
@@ -2324,20 +2350,16 @@ function renderResults(results) {
             ${meta.verified ? '<div class="ward-badge badge-ok" style="font-size:10px;padding:2px 6px;">PDF検証済</div>' : '<div class="ward-badge badge-border" style="font-size:10px;padding:2px 6px;">推定含む</div>'}
           </div>
         </div>
-
         ${heroBlock}
-
         ${resultInsight}
-
         <div class="ward-detail" style="margin-top:10px">
           <div class="ward-detail-item">指数 <span class="ward-detail-val">${r.total}点</span></div>
           <div class="ward-detail-item">基礎 <span class="ward-detail-val">${r.base}点</span></div>
           <div class="ward-detail-item">調整 <span class="ward-detail-val">${adjSign}点</span></div>
         </div>
-
-        ${meta.specialNote ? `<div class="ward-note">${meta.specialNote}</div>` : ''}
+        ${meta.specialNote ? `<div class="ward-note">${meta.specialNote}</div>` : ""}
       </div>`;
-  }).join('');
+  }).join("");
 }
 </script>
 </body>
