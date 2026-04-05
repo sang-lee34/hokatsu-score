@@ -1794,6 +1794,78 @@ const WARDS = [
         }
       }
     }
+  }  ,
+  {
+    "id": "shinjuku",
+    "name": "新宿区",
+    "prefecture": "tokyo",
+    "version": "2025",
+    "verified": true,
+    "verifiedNote": "令和7年度 定期利用保育案内P.8-9（基本指数表・調整指数表）公式PDF確認済。基本指数は月次時間ベース（160h/月以上で最高20点）。ボーダーデータは令和8年4月申込状況（令和7年12月5日時点）から施設別競争率を分析し推定。認可保育園の利用調整にも同構造を適用。",
+    "tiebreaker": "区民歴（新宿区継続居住期間）が長い世帯を優先（保護者いずれか長い方）",
+    "specialNote": "フルタイム共働きで40点（20点×2）。令和8年4月申込状況では1歳クラス募集561人に対し第1希望559人とほぼ拮抗。施設間格差が大きく、あいじつ子ども園は募集8人に第1希望48人（6倍超）の超激戦、戸山第二は募集10人に第1希望0人の余裕あり。育休延長希望で-20点（中野区も同様）。保育士として区内週30h以上勤務で+1点。保育料滞納は-12点と重い。",
+    "workScores": {
+      "d20h8": 20,
+      "d20h7": 19,
+      "d20h6": 17,
+      "d20h5": 16,
+      "d20h4": 16,
+      "d16h8": 16,
+      "d16h7": 14,
+      "d16h6": 14,
+      "d16h5": 13,
+      "d16h4": 13,
+      "d12h8": 12,
+      "d12h7": 11,
+      "d12h6": 11,
+      "d12h5": 10,
+      "d12h4": 10,
+      "d48":   10,
+      "search": 3,
+      "none":   0
+    },
+    "adjMap": {
+      "single":          4,
+      "welfare":         2,
+      "disHeavy":        4,
+      "disMid":          2,
+      "disLight":        1,
+      "disChild":        1,
+      "nursingHome":     0,
+      "nursingVisit":    0,
+      "unlicUsing":      3,
+      "returnWork":      2,
+      "returnWork1":     0,
+      "returnWork2":     0,
+      "urgentJob":       4,
+      "nurseryCarer":    1,
+      "soloPost":        2,
+      "twin":            4,
+      "sibSame":         0,
+      "sibOther":        0,
+      "multiChild3u":    0,
+      "gpInactiveYoung": 0,
+      "gpInactiveOld":   0,
+      "outOfWardIn":    -4,
+      "prevArrears":   -12,
+      "extendLeave":     0
+    },
+    "resultType": "facilities",
+    "facilities": {
+      "source": "令和8年4月入園 申込状況（令和7年12月5日時点）より施設別競争率を分析し推定。実際のボーダー指数は非公開のため仮定あり（下記参照）",
+      "sourceUrl": "https://www.city.shinjuku.lg.jp/kodomo/file04_07_00034.html",
+      "byAge": {
+        "1": {
+          "total": 88,
+          "thresholds": [
+            { "score": 0,  "count": 30, "note": "第1希望申込数が募集見込数以下の施設（競争なし仮定）" },
+            { "score": 40, "count": 43, "note": "FT共働き40点がボーダーと仮定（競争あり施設の多数）" },
+            { "score": 42, "count": 10, "note": "調整指数+2以上が必要と推定（やや激戦園）" },
+            { "score": 44, "count": 5,  "note": "調整指数+4以上が必要と推定（激戦園：下落合そらいろ等）" }
+          ]
+        }
+      }
+    }
   }
 ];
 
